@@ -63,6 +63,7 @@
       <span>📅 July 15 – 25, 2026</span>
       <span>👨‍👩‍👧 3 Travelers</span>
       <span>📍 Oslo · Finse · Flåm · Lærdal · Hardanger</span>
+      <span id="cloud-badge" class="bg-white/10 px-3 py-1 rounded-full">☁️ Connecting…</span>
     </div>
   </div>
 </header>
@@ -282,17 +283,39 @@ const DAY_PHOTOS = {
   11:[{img:U('1506905925346-21bda4d32df4'),cap:'Farewell, Norway'},{img:U('1436491865332-7a61a109cc05'),cap:'Homeward bound'},{img:U('1500534314209-a25ddb2bd429'),cap:'Until next time'}],
 };
 
+/* ═══════════════════ CLOUD STATE (Firebase) ═══════════════════ */
+/* Caches populated by Firestore listeners in the module script below.
+   When cloud isn't ready (offline / blocked), we fall back to localStorage. */
+let customExpenses = [];   // expenses added by the family (cloud)
+let commentsByDay  = {};   // { dayNum: [ {id,name,text,ts} ] }
+let photosByDay    = {};   // { dayNum: [ {id,url,path} ] }
+function groupByDay(rows){ const g={}; rows.forEach(r=>{ (g[r.day]=g[r.day]||[]).push(r); }); return g; }
+function cloudReady(){ return window.__cloudReady === true; }
+
+/* Listener callbacks invoked from the Firebase module */
+window.__onExpenses = rows => { customExpenses = rows; buildDash(); };
+window.__onComments = rows => { commentsByDay = groupByDay(rows); renderComments(currentDay); };
+window.__onPhotos   = rows => { photosByDay = groupByDay(rows); renderGalleryUploads(currentDay); };
+window.addEventListener('cloud-ready', ()=>{
+  const b = document.getElementById('cloud-badge'); if(b){ b.textContent = '☁️ Live sync on'; }
+  buildDash(); renderComments(currentDay); renderGalleryUploads(currentDay);
+});
+window.addEventListener('cloud-error', ()=>{
+  const b = document.getElementById('cloud-badge'); if(b){ b.textContent = '⚠️ Sync offline (saved on this device)'; }
+});
+
 /* ═══════════════════ DASHBOARD ═══════════════════ */
 function toggleDash(){
   const d = document.getElementById('dash');
   d.classList.toggle('hidden');
   if(!d.classList.contains('hidden')) d.scrollIntoView({behavior:'smooth'});
 }
-/* custom expenses persist in localStorage, scoped to this trip folder */
+/* custom expenses — cloud when available, else localStorage on this device */
 const EXP_KEY = (location.pathname.split('/').filter(Boolean).slice(-2,-1)[0] || 'trip') + '_expenses';
 function getCustomExp(){ try { return JSON.parse(localStorage.getItem(EXP_KEY))||[]; } catch { return []; } }
 function saveCustomExp(list){ localStorage.setItem(EXP_KEY, JSON.stringify(list)); }
-function allExpenses(){ return [...EXPENSES, ...getCustomExp()]; }
+function customExp(){ return cloudReady() ? customExpenses : getCustomExp(); }
+function allExpenses(){ return [...EXPENSES, ...customExp()]; }
 
 function buildDash(){
   const all = allExpenses();
@@ -300,7 +323,7 @@ function buildDash(){
     {label:"Loyalty Miles Used", val:"90,000", sub:"AAdvantage", icon:"✈️"},
     {label:"Prepaid Lodging (USD)", val:"$1,795", sub:"Anker · Thon · cards", icon:"🏨"},
     {label:"Transit & Excursions (NOK)", val:"5,541", sub:"~$518 USD", icon:"🚂"},
-    {label:"Tracked Line Items", val:all.length, sub:`${getCustomExp().length} added by you`, icon:"🧾"},
+    {label:"Tracked Line Items", val:all.length, sub:`${customExp().length} added by family`, icon:"🧾"},
   ];
   document.getElementById('dashCards').innerHTML = cards.map(c=>`
     <div class="rounded-2xl bg-fjord-50 border border-fjord-100 p-5">
@@ -331,9 +354,7 @@ function toggleExpForm(){
 function addExpense(){
   const desc = document.getElementById('ex-desc').value.trim();
   if(!desc){ document.getElementById('ex-desc').focus(); return; }
-  const list = getCustomExp();
-  list.push({
-    id: 'x'+Date.now(),
+  const obj = {
     cat:    document.getElementById('ex-cat').value.trim() || 'Other',
     desc,
     ref:    document.getElementById('ex-ref').value.trim(),
@@ -341,15 +362,18 @@ function addExpense(){
     cash:   document.getElementById('ex-cash').value.trim(),
     status: document.getElementById('ex-status').value,
     notes:  document.getElementById('ex-notes').value.trim(),
-  });
-  saveCustomExp(list);
+  };
+  if(cloudReady()){
+    window.cloudAddExpense(obj).catch(err=>alert('Could not save expense: '+err.message));
+  } else {
+    const list = getCustomExp(); list.push({id:'x'+Date.now(), ...obj}); saveCustomExp(list); buildDash();
+  }
   ['ex-cat','ex-desc','ex-ref','ex-pts','ex-cash','ex-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('expForm').classList.add('hidden');
-  buildDash();
 }
 function deleteExpense(id){
-  saveCustomExp(getCustomExp().filter(e=>e.id!==id));
-  buildDash();
+  if(cloudReady()){ window.cloudDelete('expenses', id).catch(err=>alert('Could not delete: '+err.message)); }
+  else { saveCustomExp(getCustomExp().filter(e=>e.id!==id)); buildDash(); }
 }
 
 /* ═══════════════════ TIMELINE ═══════════════════ */
@@ -456,27 +480,61 @@ function showDay(n){
       </div>
     </div>`;
   renderComments(n);
+  renderGalleryUploads(n);
 }
 
-/* ═══════════════════ PHOTO UPLOAD (blob) ═══════════════════ */
+/* ═══════════════════ PHOTO UPLOAD ═══════════════════ */
 function uploadPhotos(ev, n){
-  const g = document.getElementById('gallery-'+n);
-  [...ev.target.files].forEach(file=>{
-    const url = URL.createObjectURL(file);
-    const fig = document.createElement('div');
-    fig.className = "group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm";
-    fig.innerHTML = `<img src="${url}" alt="Your photo" onclick="openLightbox(${n}, this)" class="w-full h-full object-cover cursor-pointer transition duration-300 group-hover:scale-110" />
-      <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition pointer-events-none"></div>
-      <button onclick="event.stopPropagation();deletePhoto(this,'${url}')" title="Delete photo"
-        class="absolute top-1.5 right-1.5 w-7 h-7 grid place-items-center rounded-full bg-white/90 text-fjord-700 hover:bg-red-500 hover:text-white shadow text-sm opacity-0 group-hover:opacity-100 transition">✕</button>
-      <span class="absolute bottom-1.5 left-1.5 bg-fjord-700/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full pointer-events-none">Your photo</span>`;
-    g.prepend(fig);
-  });
+  const files = [...ev.target.files];
   ev.target.value = "";
+  if(cloudReady()){
+    const g = document.getElementById('gallery-'+n);
+    files.forEach(file=>{
+      // optimistic "uploading" tile
+      const ph = document.createElement('figure');
+      ph.className = "uploading relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm bg-fjord-100 grid place-items-center";
+      ph.innerHTML = `<span class="text-xs text-fjord-500 animate-pulse">Uploading…</span>`;
+      g.appendChild(ph);
+      window.cloudUploadPhoto(file, n)
+        .then(()=> ph.remove())       // real photo arrives via snapshot
+        .catch(err=>{ ph.remove(); alert('Upload failed: '+err.message); });
+    });
+  } else {
+    // offline fallback: temporary local preview (this device only)
+    const g = document.getElementById('gallery-'+n);
+    files.forEach(file=>{
+      const url = URL.createObjectURL(file);
+      const fig = document.createElement('div');
+      fig.className = "uploaded group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm";
+      fig.innerHTML = `<img src="${url}" alt="Your photo" onclick="openLightbox(${n}, this)" class="w-full h-full object-cover cursor-pointer transition duration-300 group-hover:scale-110" />
+        <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition pointer-events-none"></div>
+        <button onclick="event.stopPropagation();this.closest('div').remove()" title="Delete photo"
+          class="absolute top-1.5 right-1.5 w-7 h-7 grid place-items-center rounded-full bg-white/90 text-fjord-700 hover:bg-red-500 hover:text-white shadow text-sm opacity-0 group-hover:opacity-100 transition">✕</button>
+        <span class="absolute bottom-1.5 left-1.5 bg-amber-500/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full pointer-events-none">This device only</span>`;
+      g.appendChild(fig);
+    });
+  }
 }
-function deletePhoto(btn, url){
-  if(url) URL.revokeObjectURL(url);
-  btn.closest('div').remove();
+/* Render family photos (from cloud) into a day's gallery, after the curated shots */
+function renderGalleryUploads(n){
+  const g = document.getElementById('gallery-'+n);
+  if(!g) return;
+  g.querySelectorAll('.uploaded').forEach(el=>el.remove());
+  const list = cloudReady() ? (photosByDay[n]||[]) : [];
+  [...list].reverse().forEach(p=>{
+    const path = (p.path||'').replace(/'/g,"\\'");
+    const fig = document.createElement('figure');
+    fig.className = "uploaded group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm cursor-pointer";
+    fig.innerHTML = `<img src="${p.url}" alt="Family photo" onclick="openLightbox(${n}, this)" class="w-full h-full object-cover transition duration-300 group-hover:scale-110" />
+      <button onclick="event.stopPropagation();deletePhotoCloud('${p.id}','${path}')" title="Delete photo"
+        class="absolute top-1.5 right-1.5 w-7 h-7 grid place-items-center rounded-full bg-white/90 text-fjord-700 hover:bg-red-500 hover:text-white shadow text-sm opacity-0 group-hover:opacity-100 transition">✕</button>
+      <span class="absolute bottom-1.5 left-1.5 bg-fjord-700/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full pointer-events-none">Family photo</span>`;
+    g.appendChild(fig);
+  });
+}
+function deletePhotoCloud(id, path){
+  if(!confirm('Delete this photo for everyone?')) return;
+  window.cloudDeletePhoto(id, path).catch(err=>alert('Could not delete: '+err.message));
 }
 
 /* ═══════════════════ LIGHTBOX / SLIDESHOW ═══════════════════ */
@@ -517,37 +575,54 @@ document.addEventListener('keydown', e=>{
   else if(e.key === 'ArrowLeft') lbPrev();
 });
 
-/* ═══════════════════ COMMENTS (localStorage) ═══════════════════ */
+/* ═══════════════════ COMMENTS (cloud + local fallback) ═══════════════════ */
 function ckey(n){ return 'norway2026_comments_day'+n; }
 function getComments(n){ try { return JSON.parse(localStorage.getItem(ckey(n)))||[]; } catch { return []; } }
+function fmtTs(ts){
+  if(ts && ts.seconds) return new Date(ts.seconds*1000).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  return ts || '';
+}
 function postComment(n){
   const name = (document.getElementById('cname-'+n).value||'Family').trim();
   const text = document.getElementById('ctext-'+n).value.trim();
   if(!text) return;
-  const list = getComments(n);
-  list.push({name, text, ts:new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})});
-  localStorage.setItem(ckey(n), JSON.stringify(list));
+  if(cloudReady()){
+    window.cloudPostComment({day:n, name, text}).catch(err=>alert('Could not post: '+err.message));
+  } else {
+    const list = getComments(n);
+    list.push({name, text, ts:new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})});
+    localStorage.setItem(ckey(n), JSON.stringify(list));
+    renderComments(n);
+  }
   document.getElementById('ctext-'+n).value='';
-  renderComments(n);
 }
-function deleteComment(n, i){
+function deleteComment(n, i){            // local fallback (index-based)
   const list = getComments(n); list.splice(i,1);
   localStorage.setItem(ckey(n), JSON.stringify(list));
   renderComments(n);
 }
+function deleteCommentCloud(id){
+  window.cloudDelete('comments', id).catch(err=>alert('Could not delete: '+err.message));
+}
 function renderComments(n){
   const box = document.getElementById('comments-'+n);
-  const list = getComments(n);
+  if(!box) return;
+  const list = cloudReady() ? (commentsByDay[n]||[]) : getComments(n);
   if(!list.length){ box.innerHTML = `<p class="text-xs text-fjord-300 italic">No comments yet — be the first!</p>`; return; }
-  box.innerHTML = list.map((c,i)=>`
+  box.innerHTML = list.map((c,i)=>{
+    const del = cloudReady()
+      ? `deleteCommentCloud('${c.id}')`
+      : `deleteComment(${n},${i})`;
+    return `
     <div class="bg-fjord-50 rounded-xl px-3 py-2">
       <div class="flex items-center justify-between">
         <span class="text-sm font-semibold text-fjord-700">${esc(c.name)}</span>
-        <button onclick="deleteComment(${n},${i})" class="text-fjord-300 hover:text-red-500 text-xs">✕</button>
+        <button onclick="${del}" class="text-fjord-300 hover:text-red-500 text-xs">✕</button>
       </div>
       <p class="text-sm text-fjord-800 mt-0.5">${esc(c.text)}</p>
-      <p class="text-[10px] text-fjord-400 mt-1">${c.ts}</p>
-    </div>`).join('');
+      <p class="text-[10px] text-fjord-400 mt-1">${fmtTs(c.ts)}</p>
+    </div>`;
+  }).join('');
 }
 function esc(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
@@ -555,6 +630,62 @@ function esc(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;'
 buildDash();
 buildTimeline();
 showDay(1);
+</script>
+
+<!-- ═══════════════════ FIREBASE SYNC ═══════════════════ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+  import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject }
+    from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA4ojG1eRrvEhaPwyA0Vca-6AD2mfzTbqo",
+    authDomain: "familytrips-25e63.firebaseapp.com",
+    projectId: "familytrips-25e63",
+    storageBucket: "familytrips-25e63.firebasestorage.app",
+    messagingSenderId: "993280613673",
+    appId: "1:993280613673:web:3b1327f998bf0b5fdfeb38"
+  };
+
+  const TRIP = 'norway-2026';
+  try {
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    const tripQ = name => query(collection(db, name), where('trip','==',TRIP));
+    const list = snap => snap.docs.map(d=>({id:d.id, ...d.data()}))
+                          .sort((a,b)=>(a.ts?.seconds||1e15)-(b.ts?.seconds||1e15));
+
+    // ── write helpers exposed to the page ──
+    window.cloudAddExpense  = o => addDoc(collection(db,'expenses'), {trip:TRIP, ...o, ts:serverTimestamp()});
+    window.cloudPostComment = o => addDoc(collection(db,'comments'), {trip:TRIP, ...o, ts:serverTimestamp()});
+    window.cloudDelete      = (coll,id) => deleteDoc(doc(db,coll,id));
+    window.cloudUploadPhoto = async (file, day) => {
+      const path = `photos/${TRIP}/day${day}/${Date.now()}_${file.name.replace(/[^\w.\-]/g,'_')}`;
+      const r = sRef(storage, path);
+      await uploadBytes(r, file);
+      const url = await getDownloadURL(r);
+      return addDoc(collection(db,'photos'), {trip:TRIP, day, url, path, name:file.name, ts:serverTimestamp()});
+    };
+    window.cloudDeletePhoto = async (id, path) => {
+      if(path){ try { await deleteObject(sRef(storage, path)); } catch(e){ /* file may be gone */ } }
+      return deleteDoc(doc(db,'photos',id));
+    };
+
+    // ── live listeners ──
+    onSnapshot(tripQ('expenses'), s => window.__onExpenses && window.__onExpenses(list(s)), e => onErr('expenses',e));
+    onSnapshot(tripQ('comments'), s => window.__onComments && window.__onComments(list(s)), e => onErr('comments',e));
+    onSnapshot(tripQ('photos'),   s => window.__onPhotos   && window.__onPhotos(list(s)),   e => onErr('photos',e));
+
+    window.__cloudReady = true;
+    window.dispatchEvent(new Event('cloud-ready'));
+  } catch (err) {
+    console.error('Firebase init failed:', err);
+    window.dispatchEvent(new Event('cloud-error'));
+  }
+  function onErr(where, e){ console.warn('Sync error ('+where+'):', e.message); window.dispatchEvent(new Event('cloud-error')); }
 </script>
 </body>
 </html>

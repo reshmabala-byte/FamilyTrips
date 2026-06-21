@@ -1,0 +1,17 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Family trip photos: /photos/<trip>/<day>/<file>
+    match /photos/{trip}/{allPaths=**} {
+      allow read: if true;
+      // create/update: must be an image under 15 MB.  delete: request.resource is null.
+      allow write: if request.resource == null
+                   || (request.resource.size < 15 * 1024 * 1024
+                       && request.resource.contentType.matches('image/.*'));
+    }
+
+    // Everything else locked
+    match /{all=**} { allow read, write: if false; }
+  }
+}
