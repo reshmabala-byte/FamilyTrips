@@ -33,6 +33,8 @@
   ::-webkit-scrollbar-thumb { background:#a9c8e8; border-radius:8px; }
   .tl-btn.active { background:#1f4e8c; color:#fff; box-shadow:0 8px 20px -6px rgba(31,78,140,.6); }
   .tl-btn.active .tl-num { background:#fff; color:#1f4e8c; }
+  .img-fail img { display:none; }
+  .img-fail .fail-ph { display:grid; }
 </style>
 </head>
 <body class="font-sans text-fjord-900">
@@ -200,6 +202,24 @@ const DAYS = [
    lodging:"Home sweet home", ref:"HWHAVC / 2DCRS6"},
 ];
 
+/* ═══════════════════ CURATED PLACE PHOTOS ═══════════════════ */
+/* Representative scenic photos of each day's destinations.
+   Swap any `img` URL for your own, or add your photos via the upload button. */
+const U = id => `https://images.unsplash.com/photo-${id}?w=600&q=80`;
+const DAY_PHOTOS = {
+  1: [{img:U('1436491865332-7a61a109cc05'),cap:'Over the Atlantic'},{img:U('1506905925346-21bda4d32df4'),cap:'Journey begins'},{img:U('1500534314209-a25ddb2bd429'),cap:'Norway ahead'}],
+  2: [{img:U('1601439678777-b2b3c56fa627'),cap:'Aker Brygge harbor'},{img:U('1513519245088-0e12902e35ca'),cap:'Oslo waterfront'},{img:U('1441974231531-c6227db76b6e'),cap:'Tjuvholmen'}],
+  3: [{img:U('1486870591958-9b9d0d1dda99'),cap:'Hardangerjøkulen Glacier'},{img:U('1508739773434-c26b3d09e071'),cap:'Finse snowfields'},{img:U('1506905925346-21bda4d32df4'),cap:'Glacier trek'}],
+  4: [{img:U('1501854140801-50d01698950b'),cap:'Rallarvegen trail'},{img:U('1519331379826-f10be5486c6f'),cap:'Kjosfossen Waterfall'},{img:U('1464822759023-fed622ff2c3b'),cap:'Flåm Railway canyon'}],
+  5: [{img:U('1548013146-72479768bada'),cap:'Borgund Stave Church'},{img:U('1465056836041-7f43ac27dcb5'),cap:'Lærdalselvi River'},{img:U('1448375240586-882707db888b'),cap:'Old Lærdal'}],
+  6: [{img:U('1601439678777-b2b3c56fa627'),cap:'Nærøyfjord cruise'},{img:U('1500534314209-a25ddb2bd429'),cap:'Gudvangen valley'},{img:U('1469474968028-56623f02e42e'),cap:'Fjord waterfalls'}],
+  7: [{img:U('1441974231531-c6227db76b6e'),cap:'Hardanger orchards'},{img:U('1519331379826-f10be5486c6f'),cap:'Steinsdalsfossen'},{img:U('1500534314209-a25ddb2bd429'),cap:'Hardangerfjord'}],
+  8: [{img:U('1469474968028-56623f02e42e'),cap:'Vøringsfossen'},{img:U('1454942901704-3c44c11b2ad1'),cap:'Måbødalen chasm'},{img:U('1486870591958-9b9d0d1dda99'),cap:'Hardangervidda'}],
+  9: [{img:U('1513519245088-0e12902e35ca'),cap:'Oslo Opera House'},{img:U('1601439678777-b2b3c56fa627'),cap:'Harbor promenade'},{img:U('1558019206-8b3b3b3b3b3b'),cap:'Vigeland Park'}],
+  10:[{img:U('1448375240586-882707db888b'),cap:'Frognerseteren'},{img:U('1441974231531-c6227db76b6e'),cap:'Nordmarka trails'},{img:U('1464822759023-fed622ff2c3b'),cap:'Forest lakes'}],
+  11:[{img:U('1506905925346-21bda4d32df4'),cap:'Farewell, Norway'},{img:U('1436491865332-7a61a109cc05'),cap:'Homeward bound'},{img:U('1500534314209-a25ddb2bd429'),cap:'Until next time'}],
+};
+
 /* ═══════════════════ DASHBOARD ═══════════════════ */
 function toggleDash(){
   const d = document.getElementById('dash');
@@ -298,11 +318,16 @@ function showDay(n){
             <input type="file" accept="image/*" class="hidden" multiple onchange="uploadPhotos(event, ${d.n})" />
           </label>
         </div>
+        <p class="text-xs text-fjord-400 mb-3">Scenic shots of where we're headed — add your own with the button above.</p>
         <div id="gallery-${d.n}" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          ${[1,2,3].map(i=>`
-            <div class="group aspect-[4/3] rounded-xl border-2 border-dashed border-fjord-200 bg-fjord-50 grid place-items-center text-fjord-300 transition hover:border-fjord-400 hover:bg-fjord-100">
-              <span class="text-3xl group-hover:scale-110 transition">🖼️</span>
-            </div>`).join('')}
+          ${(DAY_PHOTOS[d.n]||[]).map(p=>`
+            <figure class="group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm">
+              <img src="${p.img}" alt="${p.cap}" loading="lazy"
+                   onerror="this.closest('figure').classList.add('img-fail')"
+                   class="w-full h-full object-cover transition duration-500 group-hover:scale-110" />
+              <span class="fail-ph hidden absolute inset-0 place-items-center bg-fjord-50 text-3xl text-fjord-300">🏔️</span>
+              <figcaption class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-fjord-900/80 to-transparent text-white text-[11px] font-semibold px-2.5 py-1.5">${p.cap}</figcaption>
+            </figure>`).join('')}
         </div>
       </div>
     </div>
@@ -340,10 +365,17 @@ function uploadPhotos(ev, n){
     const fig = document.createElement('div');
     fig.className = "group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm";
     fig.innerHTML = `<img src="${url}" class="w-full h-full object-cover transition duration-300 group-hover:scale-110" />
-      <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition"></div>`;
+      <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition"></div>
+      <button onclick="deletePhoto(this,'${url}')" title="Delete photo"
+        class="absolute top-1.5 right-1.5 w-7 h-7 grid place-items-center rounded-full bg-white/90 text-fjord-700 hover:bg-red-500 hover:text-white shadow text-sm opacity-0 group-hover:opacity-100 transition">✕</button>
+      <span class="absolute bottom-1.5 left-1.5 bg-fjord-700/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">Your photo</span>`;
     g.prepend(fig);
   });
   ev.target.value = "";
+}
+function deletePhoto(btn, url){
+  if(url) URL.revokeObjectURL(url);
+  btn.closest('div').remove();
 }
 
 /* ═══════════════════ COMMENTS (localStorage) ═══════════════════ */

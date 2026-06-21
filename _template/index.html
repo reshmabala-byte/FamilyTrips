@@ -272,10 +272,17 @@ function uploadPhotos(ev, n){
     const fig = document.createElement('div');
     fig.className = "group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm";
     fig.innerHTML = `<img src="${url}" class="w-full h-full object-cover transition duration-300 group-hover:scale-110" />
-      <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition"></div>`;
+      <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition"></div>
+      <button onclick="deletePhoto(this,'${url}')" title="Delete photo"
+        class="absolute top-1.5 right-1.5 w-7 h-7 grid place-items-center rounded-full bg-white/90 text-fjord-700 hover:bg-red-500 hover:text-white shadow text-sm opacity-0 group-hover:opacity-100 transition">✕</button>
+      <span class="absolute bottom-1.5 left-1.5 bg-fjord-700/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">Your photo</span>`;
     g.prepend(fig);
   });
   ev.target.value = "";
+}
+function deletePhoto(btn, url){
+  if(url) URL.revokeObjectURL(url);
+  btn.closest('div').remove();
 }
 /* Comments scoped per-folder so trips don't share storage. */
 const TRIP_KEY = location.pathname.split('/').filter(Boolean).slice(-2,-1)[0] || 'trip';
