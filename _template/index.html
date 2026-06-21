@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<!--
+  ════════════════════════════════════════════════════════════════
+  FAMILY TRIPS · REUSABLE JOURNAL TEMPLATE
+  ────────────────────────────────────────────────────────────────
+  HOW TO USE:
+    1. Copy this whole folder and rename it, e.g.  japan-2027/
+    2. Edit the TRIP META block (title, dates, travelers, hero image).
+    3. Replace the EXPENSES array with your booking/cost rows.
+    4. Replace the DAYS array with your day-by-day itinerary.
+       - Required per day: n, icon, date, title, transport, acts[], lodging, ref
+       - Optional per day:  extras[]  (💡 Don't-Miss Highlights card)
+                            note      (⚠️ amber Pacing Note card)
+    5. Add a card for the new trip in the repo-root index.html.
+    6. git add . && git commit -m "Add <trip>" && git push
+  Everything else (timeline, dashboard, photo upload, comments) is automatic.
+  No build step, no server — opens straight in a browser.
+  ════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TRIP TITLE · YEAR</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      colors: { fjord:{50:'#eef4fb',100:'#d6e6f5',200:'#a9c8e8',300:'#6f9fd4',400:'#3d72b3',500:'#1f4e8c',600:'#173d72',700:'#122f59',800:'#0e2342',900:'#0a1a31'}, snow:'#f7fafc', glacier:'#7fb6d9' },
+      fontFamily: { serif:['Fraunces','serif'], sans:['Inter','sans-serif'] }
+    }}
+  }
+</script>
+<style>
+  html{scroll-behavior:smooth} body{background:#f7fafc}
+  .day-fade{animation:fade .45s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  ::-webkit-scrollbar{height:8px;width:8px}
+  ::-webkit-scrollbar-thumb{background:#a9c8e8;border-radius:8px}
+  .tl-btn.active{background:#1f4e8c;color:#fff;box-shadow:0 8px 20px -6px rgba(31,78,140,.6)}
+  .tl-btn.active .tl-num{background:#fff;color:#1f4e8c}
+</style>
+</head>
+<body class="font-sans text-fjord-900">
+
+<!-- ░░ HERO  — EDIT TITLE / DATES / TRAVELERS / IMAGE ░░ -->
+<header class="relative overflow-hidden bg-fjord-700 text-white">
+  <div class="absolute inset-0 opacity-30"
+       style="background:radial-gradient(circle at 20% 20%,#3d72b3,transparent 55%),radial-gradient(circle at 80% 70%,#7fb6d9,transparent 50%);"></div>
+  <div class="relative max-w-6xl mx-auto px-6 py-16 sm:py-20">
+    <p class="tracking-[0.35em] text-glacier text-xs sm:text-sm font-semibold uppercase">A Family Travel Journal</p>
+    <h1 class="font-serif text-4xl sm:text-6xl font-700 mt-4 leading-tight">Trip Title <span class="opacity-80">🌍</span></h1>
+    <p class="mt-5 max-w-2xl text-fjord-100 text-base sm:text-lg leading-relaxed">
+      One-line description of this adventure — where you're going and what makes it special.
+    </p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <button onclick="toggleDash()" id="dashBtn"
+        class="bg-white text-fjord-700 font-semibold px-5 py-3 rounded-full hover:bg-fjord-50 transition shadow-lg">
+        📊 Budget Dashboard
+      </button>
+      <a href="#journey" class="border border-white/40 px-5 py-3 rounded-full hover:bg-white/10 transition font-semibold">
+        🗺️ Explore the Days
+      </a>
+      <a href="../index.html" class="border border-white/40 px-5 py-3 rounded-full hover:bg-white/10 transition font-semibold">
+        ← All Trips
+      </a>
+    </div>
+    <div class="mt-8 flex flex-wrap gap-6 text-sm text-fjord-100">
+      <span>📅 Start – End, Year</span>
+      <span>👨‍👩‍👧 N Travelers</span>
+      <span>📍 Key Stops</span>
+    </div>
+  </div>
+</header>
+
+<!-- ░░ FINANCIAL DASHBOARD ░░ -->
+<section id="dash" class="hidden border-b border-fjord-100 bg-white">
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
+      <h2 class="font-serif text-2xl sm:text-3xl font-600">Trip Expense &amp; Budget Log</h2>
+      <button onclick="toggleDash()" class="text-fjord-400 hover:text-fjord-700 text-sm font-semibold">✕ Close</button>
+    </div>
+    <div id="dashCards" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"></div>
+    <div class="overflow-x-auto rounded-2xl border border-fjord-100 shadow-sm">
+      <table class="w-full text-sm text-left">
+        <thead class="bg-fjord-700 text-white">
+          <tr>
+            <th class="px-4 py-3 font-semibold">Category</th>
+            <th class="px-4 py-3 font-semibold">Description</th>
+            <th class="px-4 py-3 font-semibold">Ref</th>
+            <th class="px-4 py-3 font-semibold">Points</th>
+            <th class="px-4 py-3 font-semibold">Cash</th>
+            <th class="px-4 py-3 font-semibold">Status</th>
+          </tr>
+        </thead>
+        <tbody id="dashRows" class="divide-y divide-fjord-50"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ JOURNEY ░░ -->
+<main id="journey" class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+  <div class="mb-10">
+    <h2 class="font-serif text-2xl sm:text-3xl font-600 mb-1">The Journey</h2>
+    <p class="text-fjord-400 text-sm mb-5">Tap a day to explore the itinerary.</p>
+    <div id="timeline" class="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1"></div>
+  </div>
+  <div id="dayPanel" class="grid lg:grid-cols-3 gap-8"></div>
+</main>
+
+<!-- ░░ FOOTER — EDIT CONTACTS ░░ -->
+<footer class="bg-fjord-800 text-fjord-100 mt-10">
+  <div class="max-w-6xl mx-auto px-6 py-10 text-sm">
+    <h3 class="font-serif text-xl text-white mb-4">📞 Key Service Directory</h3>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <p>🏨 Hotel / Lodge — phone</p>
+      <p>🚆 Transit Operator — link or phone</p>
+      <p>✈️ Airline Support — phone</p>
+    </div>
+    <p class="mt-8 text-fjord-300 text-xs">Built with ❤️ for our family</p>
+  </div>
+</footer>
+
+<script>
+/* ═══════════════════ DATA — EDIT THESE TWO ARRAYS ═══════════════════ */
+
+/* Each row appears in the Budget Dashboard table. */
+const EXPENSES = [
+  {cat:"Air",     desc:"Sample flight description",       ref:"ABC123",  pts:"30,000 mi", cash:"$50.00",  status:"Confirmed"},
+  {cat:"Lodging", desc:"Sample hotel (2 Nights)",         ref:"HOTEL01", pts:"—",         cash:"$400.00", status:"Prepaid"},
+  {cat:"Transit", desc:"Sample train / ferry",            ref:"TRN-001", pts:"—",         cash:"$120.00", status:"Paid"},
+];
+
+/* Each object = one day. extras[] and note are OPTIONAL — omit if not needed. */
+const DAYS = [
+  {n:1, icon:"✈️", date:"Day · Mon DD", title:"Arrival",
+   transport:"How you get there — flights, trains, transfers.",
+   acts:["First activity","Second activity","Third activity"],
+   extras:["Optional 💡 don't-miss highlight (delete this line if unused)"],
+   note:"Optional ⚠️ pacing note — long travel day, early start, etc. (delete if unused)",
+   lodging:"Where you sleep tonight", ref:"CONF-REF"},
+
+  {n:2, icon:"📍", date:"Day · Tue DD", title:"Second Day Title",
+   transport:"Transport details.",
+   acts:["Activity one","Activity two"],
+   lodging:"Lodging base", ref:"CONF-REF"},
+
+  /* ...copy a day block above for each additional day... */
+];
+
+/* ═══════════════════ ENGINE — no need to edit below ═══════════════════ */
+function toggleDash(){
+  const d = document.getElementById('dash');
+  d.classList.toggle('hidden');
+  if(!d.classList.contains('hidden')) d.scrollIntoView({behavior:'smooth'});
+}
+function buildDash(){
+  const cards = [
+    {label:"Line Items", val:EXPENSES.length, sub:"all tracked", icon:"🧾"},
+    {label:"Edit Me", val:"$0", sub:"summary card", icon:"💳"},
+    {label:"Edit Me", val:"0", sub:"summary card", icon:"🚆"},
+    {label:"Edit Me", val:"0", sub:"summary card", icon:"✈️"},
+  ];
+  document.getElementById('dashCards').innerHTML = cards.map(c=>`
+    <div class="rounded-2xl bg-fjord-50 border border-fjord-100 p-5">
+      <div class="text-2xl">${c.icon}</div>
+      <div class="font-serif text-2xl font-700 text-fjord-700 mt-2">${c.val}</div>
+      <div class="text-sm font-semibold text-fjord-900 mt-1">${c.label}</div>
+      <div class="text-xs text-fjord-400">${c.sub}</div>
+    </div>`).join('');
+  document.getElementById('dashRows').innerHTML = EXPENSES.map(e=>`
+    <tr class="hover:bg-fjord-50/60">
+      <td class="px-4 py-3 font-semibold text-fjord-700 whitespace-nowrap">${e.cat}</td>
+      <td class="px-4 py-3">${e.desc}</td>
+      <td class="px-4 py-3 font-mono text-xs text-fjord-500">${e.ref}</td>
+      <td class="px-4 py-3 whitespace-nowrap">${e.pts}</td>
+      <td class="px-4 py-3 whitespace-nowrap font-semibold">${e.cash}</td>
+      <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full bg-glacier/20 text-fjord-700 whitespace-nowrap">${e.status}</span></td>
+    </tr>`).join('');
+}
+function buildTimeline(){
+  document.getElementById('timeline').innerHTML = DAYS.map(d=>`
+    <button onclick="showDay(${d.n})" id="tl-${d.n}"
+      class="tl-btn flex-shrink-0 flex items-center gap-3 bg-white border border-fjord-100 rounded-2xl px-4 py-3 transition hover:border-fjord-300">
+      <span class="tl-num grid place-items-center w-9 h-9 rounded-full bg-fjord-50 text-fjord-700 font-bold text-sm">${d.n}</span>
+      <span class="text-left">
+        <span class="block text-xs opacity-70">${d.date}</span>
+        <span class="block text-sm font-semibold whitespace-nowrap">${d.icon} Day ${d.n}</span>
+      </span>
+    </button>`).join('');
+}
+let currentDay = 1;
+function showDay(n){
+  currentDay = n;
+  const d = DAYS.find(x=>x.n===n);
+  document.querySelectorAll('.tl-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tl-'+n).classList.add('active');
+  document.getElementById('tl-'+n).scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+  document.getElementById('dayPanel').innerHTML = `
+    <div class="lg:col-span-2 day-fade space-y-6">
+      <div class="rounded-3xl bg-fjord-700 text-white p-7 shadow-lg">
+        <div class="text-sm text-glacier font-semibold uppercase tracking-widest">${d.date}</div>
+        <h2 class="font-serif text-3xl sm:text-4xl font-700 mt-2">${d.icon} Day ${d.n}: ${d.title}</h2>
+      </div>
+      <div class="rounded-2xl bg-white border border-fjord-100 p-6 shadow-sm">
+        <h3 class="font-serif text-xl font-600 mb-2 flex items-center gap-2">🚆 Getting Around</h3>
+        <p class="text-fjord-800/90 leading-relaxed text-sm">${d.transport}</p>
+      </div>
+      <div class="rounded-2xl bg-white border border-fjord-100 p-6 shadow-sm">
+        <h3 class="font-serif text-xl font-600 mb-3 flex items-center gap-2">⭐ Activities</h3>
+        <ul class="space-y-2">${d.acts.map(a=>`
+          <li class="flex gap-3 text-sm text-fjord-800/90"><span class="text-glacier mt-0.5">▸</span><span>${a}</span></li>`).join('')}</ul>
+      </div>
+      ${d.extras ? `
+      <div class="rounded-2xl bg-glacier/10 border border-glacier/40 p-6">
+        <h3 class="font-serif text-xl font-600 mb-3 flex items-center gap-2">💡 Don't-Miss Highlights</h3>
+        <ul class="space-y-2">${d.extras.map(e=>`
+          <li class="flex gap-3 text-sm text-fjord-800"><span class="mt-0.5">✦</span><span>${e}</span></li>`).join('')}</ul>
+      </div>` : ''}
+      ${d.note ? `
+      <div class="rounded-2xl bg-amber-50 border border-amber-300 p-5 flex gap-3">
+        <span class="text-xl">⚠️</span>
+        <div>
+          <div class="font-serif text-base font-600 text-amber-900 mb-1">Pacing Note</div>
+          <p class="text-sm text-amber-900/90 leading-relaxed">${d.note}</p>
+        </div>
+      </div>` : ''}
+      <div class="rounded-2xl bg-white border border-fjord-100 p-6 shadow-sm">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <h3 class="font-serif text-xl font-600 flex items-center gap-2">📸 Family Photo Gallery</h3>
+          <label class="cursor-pointer bg-fjord-700 hover:bg-fjord-600 text-white text-sm font-semibold px-4 py-2 rounded-full transition">
+            ⬆️ Simulate Photo Upload
+            <input type="file" accept="image/*" class="hidden" multiple onchange="uploadPhotos(event, ${d.n})" />
+          </label>
+        </div>
+        <div id="gallery-${d.n}" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          ${[1,2,3].map(()=>`
+            <div class="group aspect-[4/3] rounded-xl border-2 border-dashed border-fjord-200 bg-fjord-50 grid place-items-center text-fjord-300 transition hover:border-fjord-400 hover:bg-fjord-100">
+              <span class="text-3xl group-hover:scale-110 transition">🖼️</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="day-fade space-y-6">
+      <div class="rounded-2xl bg-glacier/10 border border-glacier/30 p-6">
+        <h3 class="font-serif text-lg font-600 mb-1 flex items-center gap-2">🏨 Lodging Base</h3>
+        <p class="text-sm text-fjord-800">${d.lodging}</p>
+        <div class="mt-3 text-xs font-mono bg-white rounded-lg px-3 py-2 text-fjord-500 inline-block">Ref: ${d.ref}</div>
+      </div>
+      <div class="rounded-2xl bg-white border border-fjord-100 p-6 shadow-sm">
+        <h3 class="font-serif text-lg font-600 mb-3 flex items-center gap-2">💬 Family Comments</h3>
+        <div id="comments-${d.n}" class="space-y-3 mb-4 max-h-72 overflow-y-auto"></div>
+        <input id="cname-${d.n}" placeholder="Your name"
+          class="w-full mb-2 text-sm rounded-lg border border-fjord-200 px-3 py-2 focus:outline-none focus:border-fjord-400" />
+        <textarea id="ctext-${d.n}" rows="2" placeholder="Add a memory or note…"
+          class="w-full text-sm rounded-lg border border-fjord-200 px-3 py-2 focus:outline-none focus:border-fjord-400"></textarea>
+        <button onclick="postComment(${d.n})"
+          class="mt-2 w-full bg-fjord-700 hover:bg-fjord-600 text-white text-sm font-semibold py-2.5 rounded-full transition">
+          Post Comment
+        </button>
+      </div>
+    </div>`;
+  renderComments(n);
+}
+function uploadPhotos(ev, n){
+  const g = document.getElementById('gallery-'+n);
+  [...ev.target.files].forEach(file=>{
+    const url = URL.createObjectURL(file);
+    const fig = document.createElement('div');
+    fig.className = "group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm";
+    fig.innerHTML = `<img src="${url}" class="w-full h-full object-cover transition duration-300 group-hover:scale-110" />
+      <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition"></div>`;
+    g.prepend(fig);
+  });
+  ev.target.value = "";
+}
+/* Comments scoped per-folder so trips don't share storage. */
+const TRIP_KEY = location.pathname.split('/').filter(Boolean).slice(-2,-1)[0] || 'trip';
+function ckey(n){ return TRIP_KEY+'_comments_day'+n; }
+function getComments(n){ try { return JSON.parse(localStorage.getItem(ckey(n)))||[]; } catch { return []; } }
+function postComment(n){
+  const name = (document.getElementById('cname-'+n).value||'Family').trim();
+  const text = document.getElementById('ctext-'+n).value.trim();
+  if(!text) return;
+  const list = getComments(n);
+  list.push({name, text, ts:new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})});
+  localStorage.setItem(ckey(n), JSON.stringify(list));
+  document.getElementById('ctext-'+n).value='';
+  renderComments(n);
+}
+function deleteComment(n, i){
+  const list = getComments(n); list.splice(i,1);
+  localStorage.setItem(ckey(n), JSON.stringify(list));
+  renderComments(n);
+}
+function renderComments(n){
+  const box = document.getElementById('comments-'+n);
+  const list = getComments(n);
+  if(!list.length){ box.innerHTML = `<p class="text-xs text-fjord-300 italic">No comments yet — be the first!</p>`; return; }
+  box.innerHTML = list.map((c,i)=>`
+    <div class="bg-fjord-50 rounded-xl px-3 py-2">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-semibold text-fjord-700">${esc(c.name)}</span>
+        <button onclick="deleteComment(${n},${i})" class="text-fjord-300 hover:text-red-500 text-xs">✕</button>
+      </div>
+      <p class="text-sm text-fjord-800 mt-0.5">${esc(c.text)}</p>
+      <p class="text-[10px] text-fjord-400 mt-1">${c.ts}</p>
+    </div>`).join('');
+}
+function esc(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+buildDash();
+buildTimeline();
+showDay(1);
+</script>
+</body>
+</html>
