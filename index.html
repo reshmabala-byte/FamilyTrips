@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Our Family Trips</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      colors: { fjord:{50:'#eef4fb',100:'#d6e6f5',200:'#a9c8e8',300:'#6f9fd4',400:'#3d72b3',500:'#1f4e8c',600:'#173d72',700:'#122f59',800:'#0e2342',900:'#0a1a31'}, glacier:'#7fb6d9' },
+      fontFamily: { serif:['Fraunces','serif'], sans:['Inter','sans-serif'] }
+    }}
+  }
+</script>
+<style>
+  html{scroll-behavior:smooth} body{background:#f7fafc}
+  .card-rise{transition:transform .3s, box-shadow .3s}
+  .card-rise:hover{transform:translateY(-6px); box-shadow:0 24px 40px -18px rgba(10,26,49,.45)}
+  .card-rise:hover img{transform:scale(1.06)}
+</style>
+</head>
+<body class="font-sans text-fjord-900">
+
+<!-- HERO -->
+<header class="relative overflow-hidden bg-fjord-700 text-white">
+  <div class="absolute inset-0 opacity-30" style="background:radial-gradient(circle at 18% 22%,#3d72b3,transparent 55%),radial-gradient(circle at 82% 72%,#7fb6d9,transparent 50%);"></div>
+  <div class="relative max-w-5xl mx-auto px-6 py-20 sm:py-24 text-center">
+    <p class="tracking-[0.35em] text-glacier text-xs sm:text-sm font-semibold uppercase">Travel Archive</p>
+    <h1 class="font-serif text-5xl sm:text-7xl font-700 mt-4">Our Family Trips</h1>
+    <p class="mt-5 max-w-xl mx-auto text-fjord-100 text-base sm:text-lg leading-relaxed">
+      A living journal of our adventures around the world — itineraries, budgets, photos, and the memories in between.
+    </p>
+  </div>
+</header>
+
+<!-- TRIPS GRID -->
+<main class="max-w-6xl mx-auto px-5 sm:px-6 py-16">
+  <h2 class="font-serif text-2xl sm:text-3xl font-600 mb-2">Journeys</h2>
+  <p class="text-fjord-400 text-sm mb-10">Tap a trip to open its full interactive journal.</p>
+
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-7">
+
+    <!-- Norway 2026 -->
+    <a href="norway-2026/index.html" class="card-rise group block rounded-3xl overflow-hidden bg-white border border-fjord-100 shadow-sm">
+      <div class="relative h-52 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1601439678777-b2b3c56fa627?w=800&q=80" alt="Norwegian fjord"
+             class="w-full h-full object-cover transition duration-500" />
+        <span class="absolute top-4 left-4 bg-white/90 text-fjord-700 text-xs font-bold px-3 py-1 rounded-full">🇳🇴 Norway</span>
+        <span class="absolute top-4 right-4 bg-fjord-700/90 text-white text-xs font-semibold px-3 py-1 rounded-full">Upcoming</span>
+      </div>
+      <div class="p-6">
+        <div class="text-xs text-fjord-400 font-semibold uppercase tracking-wide">July 15 – 25, 2026 · 11 Days</div>
+        <h3 class="font-serif text-2xl font-700 mt-2 group-hover:text-fjord-600 transition">Summer Adventure: Norway</h3>
+        <p class="text-sm text-fjord-800/80 mt-2 leading-relaxed">
+          An active fjord-and-mountain loop — Oslo, the Finse glacier, Rallarvegen, Flåm, Lærdal & Hardanger.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold">
+          <span class="bg-fjord-50 text-fjord-600 px-2.5 py-1 rounded-full">Interactive Timeline</span>
+          <span class="bg-fjord-50 text-fjord-600 px-2.5 py-1 rounded-full">Budget Log</span>
+          <span class="bg-fjord-50 text-fjord-600 px-2.5 py-1 rounded-full">Photo Gallery</span>
+        </div>
+        <div class="mt-5 inline-flex items-center gap-1 text-fjord-600 font-semibold text-sm">
+          Open journal <span class="group-hover:translate-x-1 transition">→</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Placeholder for future trip -->
+    <div class="rounded-3xl border-2 border-dashed border-fjord-200 bg-fjord-50/50 grid place-items-center min-h-[22rem] text-center p-8">
+      <div>
+        <div class="text-5xl mb-3 opacity-50">🧭</div>
+        <h3 class="font-serif text-xl font-600 text-fjord-400">Next Adventure</h3>
+        <p class="text-sm text-fjord-300 mt-2 max-w-[14rem] mx-auto">A new trip journal will appear here when the next journey is planned.</p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="bg-fjord-800 text-fjord-200 mt-6">
+  <div class="max-w-6xl mx-auto px-6 py-8 text-sm text-center">
+    Built with ❤️ for our family · <span class="text-fjord-300">reshmabala-byte.github.io/FamilyTrips</span>
+  </div>
+</footer>
+
+</body>
+</html>
