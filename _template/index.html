@@ -80,9 +80,31 @@
   <div class="max-w-6xl mx-auto px-6 py-10">
     <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
       <h2 class="font-serif text-2xl sm:text-3xl font-600">Trip Expense &amp; Budget Log</h2>
-      <button onclick="toggleDash()" class="text-fjord-400 hover:text-fjord-700 text-sm font-semibold">✕ Close</button>
+      <div class="flex items-center gap-3">
+        <button onclick="toggleExpForm()" class="bg-fjord-700 hover:bg-fjord-600 text-white text-sm font-semibold px-4 py-2 rounded-full transition">+ Add Expense</button>
+        <button onclick="toggleDash()" class="text-fjord-400 hover:text-fjord-700 text-sm font-semibold">✕ Close</button>
+      </div>
     </div>
     <div id="dashCards" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"></div>
+
+    <!-- add expense form -->
+    <div id="expForm" class="hidden mb-8 rounded-2xl border border-fjord-100 bg-fjord-50 p-5">
+      <h3 class="font-serif text-lg font-600 mb-4">Add an Expense</h3>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div><label class="block text-xs font-semibold text-fjord-600 mb-1">Category</label><input id="ex-cat" placeholder="e.g. Dining" class="w-full text-sm rounded-lg border border-fjord-200 px-3 py-2 focus:outline-none focus:border-fjord-400" /></div>
+        <div class="lg:col-span-2"><label class="block text-xs font-semibold text-fjord-600 mb-1">Description *</label><input id="ex-desc" placeholder="What was it for?" class="w-full text-sm rounded-lg border border-fjord-200 px-3 py-2 focus:outline-none focus:border-fjord-400" /></div>
+        <div><label class="block text-xs font-semibold text-fjord-600 mb-1">Confirmation / Ref</label><input id="ex-ref" placeholder="optional" class="w-full text-sm rounded-lg border border-fjord-200 px-3 py-2 focus:outline-none focus:border-fjord-400" /></div>
+        <div><label class="block text-xs font-semibold text-fjord-600 mb-1">Loyalty Points</label><input id="ex-pts" placeholder="optional" class="w-full text-sm rounded-lg border border-fjord-200 px-3 py-2 focus:outline-none focus:border-fjord-400" /></div>
+        <div><label class="block text-xs font-semibold text-fjord-600 mb-1">Cash Incurred</label><input id="ex-cash" placeholder="e.g. $40.00" class="w-full text-sm rounded-lg border border-fjord-200 px-3 py-2 focus:outline-none focus:border-fjord-400" /></div>
+        <div><label class="block text-xs font-semibold text-fjord-600 mb-1">Status</label><select id="ex-status" class="w-full text-sm rounded-lg border border-fjord-200 px-3 py-2 bg-white focus:outline-none focus:border-fjord-400"><option>Confirmed</option><option>Paid</option><option>Prepaid</option><option>Pay at Property</option><option>Planned</option></select></div>
+        <div class="sm:col-span-2 lg:col-span-3"><label class="block text-xs font-semibold text-fjord-600 mb-1">Notes</label><textarea id="ex-notes" rows="2" placeholder="Any extra details…" class="w-full text-sm rounded-lg border border-fjord-200 px-3 py-2 focus:outline-none focus:border-fjord-400"></textarea></div>
+      </div>
+      <div class="flex justify-end gap-3 mt-4">
+        <button onclick="toggleExpForm()" class="text-sm font-semibold text-fjord-500 hover:text-fjord-700 px-4 py-2">Cancel</button>
+        <button onclick="addExpense()" class="bg-fjord-700 hover:bg-fjord-600 text-white text-sm font-semibold px-5 py-2 rounded-full transition">Save Expense</button>
+      </div>
+    </div>
+
     <div class="overflow-x-auto rounded-2xl border border-fjord-100 shadow-sm">
       <table class="w-full text-sm text-left">
         <thead class="bg-fjord-700 text-white">
@@ -93,6 +115,7 @@
             <th class="px-4 py-3 font-semibold">Points</th>
             <th class="px-4 py-3 font-semibold">Cash</th>
             <th class="px-4 py-3 font-semibold">Status</th>
+            <th class="px-4 py-3 font-semibold">Notes</th>
           </tr>
         </thead>
         <tbody id="dashRows" class="divide-y divide-fjord-50"></tbody>
@@ -157,9 +180,16 @@ function toggleDash(){
   d.classList.toggle('hidden');
   if(!d.classList.contains('hidden')) d.scrollIntoView({behavior:'smooth'});
 }
+/* custom expenses persist in localStorage, scoped to this trip folder */
+const EXP_KEY = (location.pathname.split('/').filter(Boolean).slice(-2,-1)[0] || 'trip') + '_expenses';
+function getCustomExp(){ try { return JSON.parse(localStorage.getItem(EXP_KEY))||[]; } catch { return []; } }
+function saveCustomExp(list){ localStorage.setItem(EXP_KEY, JSON.stringify(list)); }
+function allExpenses(){ return [...EXPENSES, ...getCustomExp()]; }
+
 function buildDash(){
+  const all = allExpenses();
   const cards = [
-    {label:"Line Items", val:EXPENSES.length, sub:"all tracked", icon:"🧾"},
+    {label:"Tracked Line Items", val:all.length, sub:`${getCustomExp().length} added by you`, icon:"🧾"},
     {label:"Edit Me", val:"$0", sub:"summary card", icon:"💳"},
     {label:"Edit Me", val:"0", sub:"summary card", icon:"🚆"},
     {label:"Edit Me", val:"0", sub:"summary card", icon:"✈️"},
@@ -171,16 +201,41 @@ function buildDash(){
       <div class="text-sm font-semibold text-fjord-900 mt-1">${c.label}</div>
       <div class="text-xs text-fjord-400">${c.sub}</div>
     </div>`).join('');
-  document.getElementById('dashRows').innerHTML = EXPENSES.map(e=>`
-    <tr class="hover:bg-fjord-50/60">
-      <td class="px-4 py-3 font-semibold text-fjord-700 whitespace-nowrap">${e.cat}</td>
-      <td class="px-4 py-3">${e.desc}</td>
-      <td class="px-4 py-3 font-mono text-xs text-fjord-500">${e.ref}</td>
-      <td class="px-4 py-3 whitespace-nowrap">${e.pts}</td>
-      <td class="px-4 py-3 whitespace-nowrap font-semibold">${e.cash}</td>
-      <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full bg-glacier/20 text-fjord-700 whitespace-nowrap">${e.status}</span></td>
-    </tr>`).join('');
+  document.getElementById('dashRows').innerHTML = all.map(e=>{
+    const del = e.id ? `<button onclick="deleteExpense('${e.id}')" title="Delete this expense" class="ml-2 text-fjord-300 hover:text-red-500">✕</button>` : '';
+    return `
+    <tr class="hover:bg-fjord-50/60 ${e.id?'bg-glacier/5':''}">
+      <td class="px-4 py-3 font-semibold text-fjord-700 whitespace-nowrap">${esc(e.cat)||'—'}</td>
+      <td class="px-4 py-3">${esc(e.desc)}</td>
+      <td class="px-4 py-3 font-mono text-xs text-fjord-500">${esc(e.ref)||'—'}</td>
+      <td class="px-4 py-3 whitespace-nowrap">${esc(e.pts)||'—'}</td>
+      <td class="px-4 py-3 whitespace-nowrap font-semibold">${esc(e.cash)||'—'}</td>
+      <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full bg-glacier/20 text-fjord-700 whitespace-nowrap">${esc(e.status)}</span></td>
+      <td class="px-4 py-3 text-xs text-fjord-600 max-w-[16rem]">${esc(e.notes)||''}${del}</td>
+    </tr>`;
+  }).join('');
 }
+function toggleExpForm(){ document.getElementById('expForm').classList.toggle('hidden'); }
+function addExpense(){
+  const desc = document.getElementById('ex-desc').value.trim();
+  if(!desc){ document.getElementById('ex-desc').focus(); return; }
+  const list = getCustomExp();
+  list.push({
+    id:'x'+Date.now(),
+    cat:    document.getElementById('ex-cat').value.trim() || 'Other',
+    desc,
+    ref:    document.getElementById('ex-ref').value.trim(),
+    pts:    document.getElementById('ex-pts').value.trim(),
+    cash:   document.getElementById('ex-cash').value.trim(),
+    status: document.getElementById('ex-status').value,
+    notes:  document.getElementById('ex-notes').value.trim(),
+  });
+  saveCustomExp(list);
+  ['ex-cat','ex-desc','ex-ref','ex-pts','ex-cash','ex-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('expForm').classList.add('hidden');
+  buildDash();
+}
+function deleteExpense(id){ saveCustomExp(getCustomExp().filter(e=>e.id!==id)); buildDash(); }
 function buildTimeline(){
   document.getElementById('timeline').innerHTML = DAYS.map(d=>`
     <button onclick="showDay(${d.n})" id="tl-${d.n}"
