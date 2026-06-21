@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Our Family Summer Adventure · Norway 2026</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          fjord:   { 50:'#eef4fb',100:'#d6e6f5',200:'#a9c8e8',300:'#6f9fd4',400:'#3d72b3',500:'#1f4e8c',600:'#173d72',700:'#122f59',800:'#0e2342',900:'#0a1a31' },
+          snow:    '#f7fafc',
+          glacier: '#7fb6d9',
+        },
+        fontFamily: {
+          serif: ['Fraunces','serif'],
+          sans:  ['Inter','sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { background: #f7fafc; }
+  .day-fade { animation: fade .45s ease; }
+  @keyframes fade { from { opacity:0; transform: translateY(12px);} to {opacity:1; transform:none;} }
+  ::-webkit-scrollbar { height:8px; width:8px; }
+  ::-webkit-scrollbar-thumb { background:#a9c8e8; border-radius:8px; }
+  .tl-btn.active { background:#1f4e8c; color:#fff; box-shadow:0 8px 20px -6px rgba(31,78,140,.6); }
+  .tl-btn.active .tl-num { background:#fff; color:#1f4e8c; }
+</style>
+</head>
+<body class="font-sans text-fjord-900">
+
+<!-- ░░ HERO ░░ -->
+<header class="relative overflow-hidden bg-fjord-700 text-white">
+  <div class="absolute inset-0 opacity-30"
+       style="background:radial-gradient(circle at 20% 20%,#3d72b3,transparent 55%),radial-gradient(circle at 80% 70%,#7fb6d9,transparent 50%);"></div>
+  <div class="relative max-w-6xl mx-auto px-6 py-16 sm:py-20">
+    <p class="tracking-[0.35em] text-glacier text-xs sm:text-sm font-semibold uppercase">A Family Travel Journal</p>
+    <h1 class="font-serif text-4xl sm:text-6xl font-700 mt-4 leading-tight">Norway&nbsp;2026 <span class="opacity-80">🇳🇴</span></h1>
+    <p class="mt-5 max-w-2xl text-fjord-100 text-base sm:text-lg leading-relaxed">
+      An active 11-day family loop across high mountain peaks, sweeping fjords, and lush valleys —
+      from Oslo's harbor to the glaciers of Finse and the orchards of Hardanger.
+    </p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <button onclick="toggleDash()" id="dashBtn"
+        class="bg-white text-fjord-700 font-semibold px-5 py-3 rounded-full hover:bg-fjord-50 transition shadow-lg">
+        📊 Budget Dashboard
+      </button>
+      <a href="#journey" class="border border-white/40 px-5 py-3 rounded-full hover:bg-white/10 transition font-semibold">
+        🗺️ Explore the Days
+      </a>
+    </div>
+    <div class="mt-8 flex flex-wrap gap-6 text-sm text-fjord-100">
+      <span>📅 July 15 – 25, 2026</span>
+      <span>👨‍👩‍👧 3 Travelers</span>
+      <span>📍 Oslo · Finse · Flåm · Lærdal · Hardanger</span>
+    </div>
+  </div>
+</header>
+
+<!-- ░░ FINANCIAL DASHBOARD ░░ -->
+<section id="dash" class="hidden border-b border-fjord-100 bg-white">
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
+      <h2 class="font-serif text-2xl sm:text-3xl font-600">Trip Expense &amp; Budget Log</h2>
+      <button onclick="toggleDash()" class="text-fjord-400 hover:text-fjord-700 text-sm font-semibold">✕ Close</button>
+    </div>
+
+    <!-- summary cards -->
+    <div id="dashCards" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"></div>
+
+    <!-- table -->
+    <div class="overflow-x-auto rounded-2xl border border-fjord-100 shadow-sm">
+      <table class="w-full text-sm text-left">
+        <thead class="bg-fjord-700 text-white">
+          <tr>
+            <th class="px-4 py-3 font-semibold">Category</th>
+            <th class="px-4 py-3 font-semibold">Description</th>
+            <th class="px-4 py-3 font-semibold">Ref</th>
+            <th class="px-4 py-3 font-semibold">Points</th>
+            <th class="px-4 py-3 font-semibold">Cash</th>
+            <th class="px-4 py-3 font-semibold">Status</th>
+          </tr>
+        </thead>
+        <tbody id="dashRows" class="divide-y divide-fjord-50"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ JOURNEY ░░ -->
+<main id="journey" class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+
+  <!-- horizontal timeline -->
+  <div class="mb-10">
+    <h2 class="font-serif text-2xl sm:text-3xl font-600 mb-1">The Journey</h2>
+    <p class="text-fjord-400 text-sm mb-5">Tap a day to explore the itinerary.</p>
+    <div id="timeline" class="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1"></div>
+  </div>
+
+  <!-- day panel -->
+  <div id="dayPanel" class="grid lg:grid-cols-3 gap-8"></div>
+</main>
+
+<footer class="bg-fjord-800 text-fjord-100 mt-10">
+  <div class="max-w-6xl mx-auto px-6 py-10 text-sm">
+    <h3 class="font-serif text-xl text-white mb-4">📞 Key Service Directory</h3>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <p>🚂 Vy Train — <a class="underline hover:text-white" href="https://www.vy.no/en" target="_blank" rel="noopener">vy.no/en</a></p>
+      <p>🏔️ Finsehytta Lodge — +47 56 52 67 32</p>
+      <p>🚢 Norway's Best — +47 57 63 14 00</p>
+      <p>🏨 Thon Hotel Sandven — +47 56 55 20 88</p>
+      <p>🏨 Lindstrøm Hotel Lærdal — +47 57 66 69 00</p>
+      <p>🏨 Anker Hotel Oslo — +47 22 99 75 00</p>
+      <p>🏨 Citybox Oslo — +47 21 42 04 80</p>
+      <p>✈️ American Airlines — +1-800-433-7300</p>
+    </div>
+    <p class="mt-8 text-fjord-300 text-xs">Built with ❤️ for our family · Norway 2026</p>
+  </div>
+</footer>
+
+<script>
+/* ═══════════════════ DATA ═══════════════════ */
+const EXPENSES = [
+  {cat:"Transatlantic Air", desc:"PHX ➔ PHL ➔ DUB ➔ OSL (Bala & Reshma)", ref:"QSJXGL / 3GEZUW", pts:"60,000 mi", cash:"$21.00", status:"Confirmed"},
+  {cat:"Transatlantic Air", desc:"PHX ➔ BNA ➔ DUB (Kavya Connection)", ref:"MVZVHS / 366CHW", pts:"30,000 mi", cash:"$10.50", status:"Confirmed"},
+  {cat:"Lodging", desc:"Citybox Oslo (1 Night - Family Room)", ref:"CBO136672", pts:"—", cash:"CC Guaranteed", status:"Confirmed"},
+  {cat:"Mountain Transit", desc:"Vy Express: Oslo S ➔ Finse", ref:"F4K-APW-UI4", pts:"—", cash:"3,036 NOK (~$284)", status:"Paid"},
+  {cat:"Mountain Lodging", desc:"Finsehytta DNT Cabin (1 Night)", ref:"Order 20623", pts:"—", cash:"Full Board Prepaid", status:"Paid"},
+  {cat:"High Rail Transit", desc:"Vy Local: Finse ➔ Myrdal (Reshma)", ref:"—", pts:"—", cash:"Paid via Conductor", status:"Confirmed"},
+  {cat:"Historic Rail", desc:"Flåmsbana Descent: Myrdal ➔ Flåm", ref:"IDB-HRW-RCE", pts:"—", cash:"Prepaid", status:"Paid"},
+  {cat:"Fjord Lodging", desc:"Lindstrøm Hotel Lærdal (2 Nights)", ref:"34611SG014071", pts:"—", cash:"5,700 NOK (~$533)", status:"Pay at Property"},
+  {cat:"Fjord Excursion", desc:"Nærøyfjord Electric Ferry Loop", ref:"SMGU61", pts:"—", cash:"2,505 NOK (~$234)", status:"Paid"},
+  {cat:"Orchard Lodging", desc:"Thon Hotel Sandven (2 Nights)", ref:"1012240510", pts:"—", cash:"$612.29", status:"Prepaid"},
+  {cat:"Capital Lodging", desc:"Anker Hotel Oslo (3 Nights)", ref:"73467623265654", pts:"—", cash:"$583.25", status:"Prepaid"},
+  {cat:"Return Air", desc:"OSL ➔ DUB ➔ PHL ➔ PHX (All)", ref:"HWHAVC / 2DCRS6", pts:"—", cash:"Prepaid Exchange", status:"Confirmed"},
+];
+
+const DAYS = [
+  {n:1, icon:"✈️", date:"Wed · Jul 15", title:"Transatlantic Departure",
+   transport:"Flights out of Phoenix Sky Harbor (PHX). Bala & Reshma: AA 2300 (PHX 8:54a ➔ PHL 4:42p) ➔ AA 722 (PHL 6:25p ➔ DUB 6:30a). Kavya: AA 3073 (PHX 8:30a ➔ BNA 2:02p) ➔ Aer Lingus 76 (BNA 6:35p ➔ DUB 8:35a).",
+   acts:["Check in early and clear security","Prepare for the summer trip","Enjoy the flight over the Atlantic"],
+   lodging:"Overnight flight", ref:"QSJXGL / 3GEZUW"},
+  {n:2, icon:"🇳🇴", date:"Thu · Jul 16", title:"Welcome to Oslo",
+   transport:"Aer Lingus EI 626 from Dublin 10:30a, landing Oslo (OSL) 1:40p. Flytoget high-speed train to Oslo S Central.",
+   acts:["Check into Citybox Oslo and drop bags","Explore Aker Brygge boardwalks & Tjuvholmen sculpture gardens","First evening meal along the harbor promenade"],
+   lodging:"Citybox Oslo (Prinsens Gate 6)", ref:"CBO136672"},
+  {n:3, icon:"🏔️", date:"Fri · Jul 17", title:"The Glacial High Peaks",
+   transport:"Vy Train F4 from Oslo S 6:23a sharp, arriving Finse 10:46a (Car 2, Seats 43, 44, 47).",
+   acts:["Drop backpacks at the remote mountain lodge","Trek toward the majestic Hardangerjøkulen Glacier over snowfields & glacial streams","Three-course communal feast with hikers from across the globe"],
+   extras:["Rallarmuseet (Navvies Museum) right by the station — the story of the Bergen Line builders","Fun fact: Hardangerjøkulen is the Hoth glacier from Star Wars: The Empire Strikes Back ❄️","Walking ON the ice (Blåisen tongue) needs a certified guide — crevasse risk; the viewing trek is fine unguided"],
+   lodging:"Finsehytta DNT Mountain Lodge (Full Board)", ref:"Order 20623"},
+  {n:4, icon:"🚴", date:"Sat · Jul 18", title:"Rallarvegen Trail & Flåmsbana",
+   transport:"Bala & Kavya: bike 23 mi (38 km) down the gravel Rallarvegen to Myrdal. Reshma: 11:20a mountain train ➔ 12:06p Flåmsbana descent past Kjosfossen Waterfall. Reunite at Flåm docks ~1:30p.",
+   acts:["Cycle the iconic Rallarvegen gravel path","Window views down the canyon on the Flåm Railway","Cardamom rolls & coffee at Bakern i Flåm, then bus to Lærdal"],
+   extras:["Your bus to Lærdal passes through the Lærdal Tunnel — 24.5 km, the world's longest road tunnel, with blue-lit ice caverns","Optional detour: Stegastein viewpoint above Aurland for a jaw-dropping fjord overlook"],
+   note:"Snow check: Rallarvegen near Finse can still have snow patches in mid-July. If the high section isn't cleared, Bala & Kavya can shorten to a Myrdal-side ride — Reshma's train option is your built-in backup.",
+   lodging:"Lindstrøm Hotel Lærdal (Øyraplassen 3)", ref:"34611SG014071"},
+  {n:5, icon:"🪵", date:"Sun · Jul 19", title:"Valley Histories & Salmon Rivers",
+   transport:"Local cruiser / hybrid bikes rented at the property.",
+   acts:["Cycle along the crystal-clear Lærdalselvi Salmon River","Visit the Borgund Stave Church (standing since 1180)","Stroll the 18th-century storefronts of Old Lærdal"],
+   extras:["Norwegian Wild Salmon Centre (Norsk Villakssenter) on the river — perfect tie-in to your salmon-river ride","Historic Vindhella & the old King's Road walking paths near Borgund"],
+   lodging:"Lindstrøm Hotel Lærdal", ref:"34611SG014071"},
+  {n:6, icon:"🚢", date:"Mon · Jul 20", title:"The Majestic Nærøyfjord Cruise",
+   transport:"Bus to Flåm. Electric fjord cruise 10:15a Flåm ➔ 12:15p Gudvangen. Tunnel shuttle 3:45p back. Evening coach to Hardangerfjord.",
+   acts:["Lock backpacks in Flåm station lockers","Silent eco-catamaran through UNESCO Nærøyfjord's 3,000-ft walls","Viking Village Njardarheimr & valley waterfall trails at Gudvangen"],
+   extras:["Optional: the dramatic Stalheimskleiva hairpin road & Stalheim viewpoint over the Nærøydalen valley"],
+   lodging:"Thon Hotel Sandven, Norheimsund (Kaien 28)", ref:"1012240510"},
+  {n:7, icon:"🍏", date:"Tue · Jul 21", title:"Hardanger Orchard E-Biking",
+   transport:"Local rental e-bikes.",
+   acts:["Glide through apple, cherry & plum orchards along the fjord","Walk behind the Steinsdalsfossen Waterfall on a paved path","Relaxed evening on the hotel waterfront veranda"],
+   extras:["Optional: Hardanger Folk Museum in Utne for regional culture & folk costume","Bank your energy tonight — tomorrow is a long travel day"],
+   lodging:"Thon Hotel Sandven", ref:"1012240510"},
+  {n:8, icon:"🥾", date:"Wed · Jul 22", title:"The Great Canyon Chasm",
+   transport:"Excursion to the waterfall canyon, then afternoon coach over the mountain pass to Oslo.",
+   acts:["Vøringsfossen Waterfall & suspended viewing platforms over a 600-ft chasm","Check into the central Oslo hub","Late dinner in artsy Grünerløkka"],
+   extras:["Don't miss the new Vøringsfossen step-bridge — 99 steps spanning the gorge with the new stepped viewing platform"],
+   note:"Heads-up — this is the trip's longest travel day: Norheimsund → Vøringsfossen → Oslo is ~8 hrs on the road plus the waterfall stop. Start early, pack snacks, and expect a late Oslo arrival. The Hardangervidda plateau crossing on RV7 is scenic, so enjoy the ride.",
+   lodging:"Anker Hotel Oslo (Storgata 55)", ref:"73467623265654"},
+  {n:9, icon:"🛴", date:"Thu · Jul 23", title:"Oslo Harbor Cruise & Roof Walks",
+   transport:"App-based e-scooter / e-bike rentals.",
+   acts:["Zip along Oslo's harbor promenade","Walk up the marble roof of the Oslo Opera House","Vigeland Sculpture Park's bronze & granite masterworks"],
+   extras:["The MUNCH Museum is right beside the Opera House — see The Scream in person ⭐","Note: the Viking Ship Museum is CLOSED for renovation until 2027 — skip it to avoid a wasted trip","Rainy-day backup: National Museum (also has a version of The Scream) or the Bygdøy museums (Fram polar ship, Kon-Tiki)"],
+   lodging:"Anker Hotel Oslo", ref:"73467623265654"},
+  {n:10, icon:"🌲", date:"Fri · Jul 24", title:"Deep Nordmarka Forest Trails",
+   transport:"Metro up the mountain; trail hybrid bike rentals.",
+   acts:["Metro to the alpine overlook at Frognerseteren","Gravel logging tracks past mirror-like lakes in Nordmarka","Coffee & wild blueberry pastries at a hidden log cabin, then downhill coast"],
+   extras:["Your metro (Line 1) stops at Holmenkollen — the iconic ski-jump tower, ski museum & viewpoint are right there. Easiest high-payoff stop of the trip ⭐","Frognerseteren restaurant's apple cake is a beloved Oslo tradition"],
+   lodging:"Anker Hotel Oslo", ref:"73467623265654"},
+  {n:11, icon:"✈️", date:"Sat · Jul 25", title:"Heading Home to Phoenix",
+   transport:"Morning Flytoget to OSL. Returns: EI 627 (OSL 1:35p ➔ DUB 2:55p), AA 7991 (DUB 4:10p ➔ PHL 6:55p), AA 2721 (PHL 9:50p ➔ PHX 11:59p).",
+   acts:["Relax on the flights home","Flip through our trip photos","Land back in Phoenix!"],
+   lodging:"Home sweet home", ref:"HWHAVC / 2DCRS6"},
+];
+
+/* ═══════════════════ DASHBOARD ═══════════════════ */
+function toggleDash(){
+  const d = document.getElementById('dash');
+  d.classList.toggle('hidden');
+  if(!d.classList.contains('hidden')) d.scrollIntoView({behavior:'smooth'});
+}
+function buildDash(){
+  const cards = [
+    {label:"Loyalty Miles Used", val:"90,000", sub:"AAdvantage", icon:"✈️"},
+    {label:"Prepaid Lodging (USD)", val:"$1,795", sub:"Anker · Thon · cards", icon:"🏨"},
+    {label:"Transit & Excursions (NOK)", val:"5,541", sub:"~$518 USD", icon:"🚂"},
+    {label:"Booked Line Items", val:EXPENSES.length, sub:"all tracked", icon:"🧾"},
+  ];
+  document.getElementById('dashCards').innerHTML = cards.map(c=>`
+    <div class="rounded-2xl bg-fjord-50 border border-fjord-100 p-5">
+      <div class="text-2xl">${c.icon}</div>
+      <div class="font-serif text-2xl font-700 text-fjord-700 mt-2">${c.val}</div>
+      <div class="text-sm font-semibold text-fjord-900 mt-1">${c.label}</div>
+      <div class="text-xs text-fjord-400">${c.sub}</div>
+    </div>`).join('');
+
+  document.getElementById('dashRows').innerHTML = EXPENSES.map(e=>`
+    <tr class="hover:bg-fjord-50/60">
+      <td class="px-4 py-3 font-semibold text-fjord-700 whitespace-nowrap">${e.cat}</td>
+      <td class="px-4 py-3">${e.desc}</td>
+      <td class="px-4 py-3 font-mono text-xs text-fjord-500">${e.ref}</td>
+      <td class="px-4 py-3 whitespace-nowrap">${e.pts}</td>
+      <td class="px-4 py-3 whitespace-nowrap font-semibold">${e.cash}</td>
+      <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full bg-glacier/20 text-fjord-700 whitespace-nowrap">${e.status}</span></td>
+    </tr>`).join('');
+}
+
+/* ═══════════════════ TIMELINE ═══════════════════ */
+function buildTimeline(){
+  document.getElementById('timeline').innerHTML = DAYS.map(d=>`
+    <button onclick="showDay(${d.n})" id="tl-${d.n}"
+      class="tl-btn flex-shrink-0 flex items-center gap-3 bg-white border border-fjord-100 rounded-2xl px-4 py-3 transition hover:border-fjord-300">
+      <span class="tl-num grid place-items-center w-9 h-9 rounded-full bg-fjord-50 text-fjord-700 font-bold text-sm">${d.n}</span>
+      <span class="text-left">
+        <span class="block text-xs opacity-70">${d.date}</span>
+        <span class="block text-sm font-semibold whitespace-nowrap">${d.icon} Day ${d.n}</span>
+      </span>
+    </button>`).join('');
+}
+
+/* ═══════════════════ DAY PANEL ═══════════════════ */
+let currentDay = 1;
+function showDay(n){
+  currentDay = n;
+  const d = DAYS.find(x=>x.n===n);
+  document.querySelectorAll('.tl-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tl-'+n).classList.add('active');
+  document.getElementById('tl-'+n).scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+
+  document.getElementById('dayPanel').innerHTML = `
+    <!-- main column -->
+    <div class="lg:col-span-2 day-fade space-y-6">
+      <div class="rounded-3xl bg-fjord-700 text-white p-7 shadow-lg">
+        <div class="text-sm text-glacier font-semibold uppercase tracking-widest">${d.date}</div>
+        <h2 class="font-serif text-3xl sm:text-4xl font-700 mt-2">${d.icon} Day ${d.n}: ${d.title}</h2>
+      </div>
+
+      <div class="rounded-2xl bg-white border border-fjord-100 p-6 shadow-sm">
+        <h3 class="font-serif text-xl font-600 mb-2 flex items-center gap-2">🚆 Getting Around</h3>
+        <p class="text-fjord-800/90 leading-relaxed text-sm">${d.transport}</p>
+      </div>
+
+      <div class="rounded-2xl bg-white border border-fjord-100 p-6 shadow-sm">
+        <h3 class="font-serif text-xl font-600 mb-3 flex items-center gap-2">⭐ Activities</h3>
+        <ul class="space-y-2">${d.acts.map(a=>`
+          <li class="flex gap-3 text-sm text-fjord-800/90"><span class="text-glacier mt-0.5">▸</span><span>${a}</span></li>`).join('')}</ul>
+      </div>
+
+      ${d.extras ? `
+      <div class="rounded-2xl bg-glacier/10 border border-glacier/40 p-6">
+        <h3 class="font-serif text-xl font-600 mb-3 flex items-center gap-2">💡 Don't-Miss Highlights</h3>
+        <ul class="space-y-2">${d.extras.map(e=>`
+          <li class="flex gap-3 text-sm text-fjord-800"><span class="mt-0.5">✦</span><span>${e}</span></li>`).join('')}</ul>
+      </div>` : ''}
+
+      ${d.note ? `
+      <div class="rounded-2xl bg-amber-50 border border-amber-300 p-5 flex gap-3">
+        <span class="text-xl">⚠️</span>
+        <div>
+          <div class="font-serif text-base font-600 text-amber-900 mb-1">Pacing Note</div>
+          <p class="text-sm text-amber-900/90 leading-relaxed">${d.note}</p>
+        </div>
+      </div>` : ''}
+
+      <!-- PHOTO GALLERY -->
+      <div class="rounded-2xl bg-white border border-fjord-100 p-6 shadow-sm">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+          <h3 class="font-serif text-xl font-600 flex items-center gap-2">📸 Family Photo Gallery</h3>
+          <label class="cursor-pointer bg-fjord-700 hover:bg-fjord-600 text-white text-sm font-semibold px-4 py-2 rounded-full transition">
+            ⬆️ Simulate Photo Upload
+            <input type="file" accept="image/*" class="hidden" multiple onchange="uploadPhotos(event, ${d.n})" />
+          </label>
+        </div>
+        <div id="gallery-${d.n}" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          ${[1,2,3].map(i=>`
+            <div class="group aspect-[4/3] rounded-xl border-2 border-dashed border-fjord-200 bg-fjord-50 grid place-items-center text-fjord-300 transition hover:border-fjord-400 hover:bg-fjord-100">
+              <span class="text-3xl group-hover:scale-110 transition">🖼️</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- side column -->
+    <div class="day-fade space-y-6">
+      <div class="rounded-2xl bg-glacier/10 border border-glacier/30 p-6">
+        <h3 class="font-serif text-lg font-600 mb-1 flex items-center gap-2">🏨 Lodging Base</h3>
+        <p class="text-sm text-fjord-800">${d.lodging}</p>
+        <div class="mt-3 text-xs font-mono bg-white rounded-lg px-3 py-2 text-fjord-500 inline-block">Ref: ${d.ref}</div>
+      </div>
+
+      <!-- COMMENTS -->
+      <div class="rounded-2xl bg-white border border-fjord-100 p-6 shadow-sm">
+        <h3 class="font-serif text-lg font-600 mb-3 flex items-center gap-2">💬 Family Comments</h3>
+        <div id="comments-${d.n}" class="space-y-3 mb-4 max-h-72 overflow-y-auto"></div>
+        <input id="cname-${d.n}" placeholder="Your name"
+          class="w-full mb-2 text-sm rounded-lg border border-fjord-200 px-3 py-2 focus:outline-none focus:border-fjord-400" />
+        <textarea id="ctext-${d.n}" rows="2" placeholder="Add a memory or note…"
+          class="w-full text-sm rounded-lg border border-fjord-200 px-3 py-2 focus:outline-none focus:border-fjord-400"></textarea>
+        <button onclick="postComment(${d.n})"
+          class="mt-2 w-full bg-fjord-700 hover:bg-fjord-600 text-white text-sm font-semibold py-2.5 rounded-full transition">
+          Post Comment
+        </button>
+      </div>
+    </div>`;
+  renderComments(n);
+}
+
+/* ═══════════════════ PHOTO UPLOAD (blob) ═══════════════════ */
+function uploadPhotos(ev, n){
+  const g = document.getElementById('gallery-'+n);
+  [...ev.target.files].forEach(file=>{
+    const url = URL.createObjectURL(file);
+    const fig = document.createElement('div');
+    fig.className = "group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm";
+    fig.innerHTML = `<img src="${url}" class="w-full h-full object-cover transition duration-300 group-hover:scale-110" />
+      <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition"></div>`;
+    g.prepend(fig);
+  });
+  ev.target.value = "";
+}
+
+/* ═══════════════════ COMMENTS (localStorage) ═══════════════════ */
+function ckey(n){ return 'norway2026_comments_day'+n; }
+function getComments(n){ try { return JSON.parse(localStorage.getItem(ckey(n)))||[]; } catch { return []; } }
+function postComment(n){
+  const name = (document.getElementById('cname-'+n).value||'Family').trim();
+  const text = document.getElementById('ctext-'+n).value.trim();
+  if(!text) return;
+  const list = getComments(n);
+  list.push({name, text, ts:new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})});
+  localStorage.setItem(ckey(n), JSON.stringify(list));
+  document.getElementById('ctext-'+n).value='';
+  renderComments(n);
+}
+function deleteComment(n, i){
+  const list = getComments(n); list.splice(i,1);
+  localStorage.setItem(ckey(n), JSON.stringify(list));
+  renderComments(n);
+}
+function renderComments(n){
+  const box = document.getElementById('comments-'+n);
+  const list = getComments(n);
+  if(!list.length){ box.innerHTML = `<p class="text-xs text-fjord-300 italic">No comments yet — be the first!</p>`; return; }
+  box.innerHTML = list.map((c,i)=>`
+    <div class="bg-fjord-50 rounded-xl px-3 py-2">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-semibold text-fjord-700">${esc(c.name)}</span>
+        <button onclick="deleteComment(${n},${i})" class="text-fjord-300 hover:text-red-500 text-xs">✕</button>
+      </div>
+      <p class="text-sm text-fjord-800 mt-0.5">${esc(c.text)}</p>
+      <p class="text-[10px] text-fjord-400 mt-1">${c.ts}</p>
+    </div>`).join('');
+}
+function esc(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ═══════════════════ INIT ═══════════════════ */
+buildDash();
+buildTimeline();
+showDay(1);
+</script>
+</body>
+</html>
