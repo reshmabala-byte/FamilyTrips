@@ -173,6 +173,23 @@
   </div>
 </footer>
 
+<!-- ░░ LIGHTBOX / SLIDESHOW ░░ -->
+<div id="lightbox" class="hidden fixed inset-0 z-[300] bg-fjord-900/95 flex flex-col">
+  <div class="flex items-center justify-between px-5 py-4 text-white">
+    <span id="lb-count" class="text-sm font-semibold text-fjord-200"></span>
+    <div class="flex items-center gap-2">
+      <button id="lb-play" onclick="toggleSlideshow()" class="text-sm font-semibold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition">▶ Slideshow</button>
+      <button onclick="closeLb()" class="text-2xl leading-none hover:text-glacier px-2">✕</button>
+    </div>
+  </div>
+  <div class="flex-1 flex items-center justify-center px-1 sm:px-6 pb-2 min-h-0" onclick="if(event.target===this) closeLb()">
+    <button onclick="lbPrev()" class="text-white/70 hover:text-white text-4xl sm:text-5xl px-2 sm:px-5 select-none">‹</button>
+    <img id="lb-img" class="max-h-full max-w-full object-contain rounded-lg shadow-2xl" />
+    <button onclick="lbNext()" class="text-white/70 hover:text-white text-4xl sm:text-5xl px-2 sm:px-5 select-none">›</button>
+  </div>
+  <div class="text-center pb-6 px-6"><span id="lb-cap" class="text-white text-sm bg-white/10 rounded-full px-4 py-1.5"></span></div>
+</div>
+
 <script>
 /* ═══════════════════ DATA ═══════════════════ */
 const EXPENSES = [
@@ -404,12 +421,13 @@ function showDay(n){
         <p class="text-xs text-fjord-400 mb-3">Scenic shots of where we're headed — add your own with the button above.</p>
         <div id="gallery-${d.n}" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           ${(DAY_PHOTOS[d.n]||[]).map(p=>`
-            <figure class="group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm">
+            <figure class="group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm cursor-pointer" onclick="openLightbox(${d.n}, this.querySelector('img'))">
               <img src="${p.img}" alt="${p.cap}" loading="lazy"
                    onerror="this.closest('figure').classList.add('img-fail')"
                    class="w-full h-full object-cover transition duration-500 group-hover:scale-110" />
               <span class="fail-ph hidden absolute inset-0 place-items-center bg-fjord-50 text-3xl text-fjord-300">🏔️</span>
-              <figcaption class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-fjord-900/80 to-transparent text-white text-[11px] font-semibold px-2.5 py-1.5">${p.cap}</figcaption>
+              <span class="absolute top-1.5 right-1.5 w-7 h-7 grid place-items-center rounded-full bg-white/80 text-fjord-700 text-xs opacity-0 group-hover:opacity-100 transition">⛶</span>
+              <figcaption class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-fjord-900/80 to-transparent text-white text-[11px] font-semibold px-2.5 py-1.5 pointer-events-none">${p.cap}</figcaption>
             </figure>`).join('')}
         </div>
       </div>
@@ -447,11 +465,11 @@ function uploadPhotos(ev, n){
     const url = URL.createObjectURL(file);
     const fig = document.createElement('div');
     fig.className = "group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm";
-    fig.innerHTML = `<img src="${url}" class="w-full h-full object-cover transition duration-300 group-hover:scale-110" />
-      <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition"></div>
-      <button onclick="deletePhoto(this,'${url}')" title="Delete photo"
+    fig.innerHTML = `<img src="${url}" alt="Your photo" onclick="openLightbox(${n}, this)" class="w-full h-full object-cover cursor-pointer transition duration-300 group-hover:scale-110" />
+      <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition pointer-events-none"></div>
+      <button onclick="event.stopPropagation();deletePhoto(this,'${url}')" title="Delete photo"
         class="absolute top-1.5 right-1.5 w-7 h-7 grid place-items-center rounded-full bg-white/90 text-fjord-700 hover:bg-red-500 hover:text-white shadow text-sm opacity-0 group-hover:opacity-100 transition">✕</button>
-      <span class="absolute bottom-1.5 left-1.5 bg-fjord-700/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">Your photo</span>`;
+      <span class="absolute bottom-1.5 left-1.5 bg-fjord-700/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full pointer-events-none">Your photo</span>`;
     g.prepend(fig);
   });
   ev.target.value = "";
@@ -460,6 +478,44 @@ function deletePhoto(btn, url){
   if(url) URL.revokeObjectURL(url);
   btn.closest('div').remove();
 }
+
+/* ═══════════════════ LIGHTBOX / SLIDESHOW ═══════════════════ */
+let lbImgs = [], lbIdx = 0, lbTimer = null;
+function openLightbox(n, imgEl){
+  const els = [...document.querySelectorAll('#gallery-'+n+' img')];
+  lbImgs = els.map(im => ({ src: im.src, cap: im.closest('figure')?.querySelector('figcaption')?.textContent || im.alt || '' }));
+  lbIdx = Math.max(0, els.indexOf(imgEl));
+  showLb();
+  document.getElementById('lightbox').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function showLb(){
+  const it = lbImgs[lbIdx]; if(!it) return;
+  document.getElementById('lb-img').src = it.src;
+  document.getElementById('lb-cap').textContent = it.cap;
+  document.getElementById('lb-count').textContent = `${lbIdx+1} / ${lbImgs.length}`;
+}
+function lbNext(){ if(lbImgs.length){ lbIdx = (lbIdx+1) % lbImgs.length; showLb(); } }
+function lbPrev(){ if(lbImgs.length){ lbIdx = (lbIdx-1+lbImgs.length) % lbImgs.length; showLb(); } }
+function closeLb(){
+  stopSlideshow();
+  document.getElementById('lightbox').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function toggleSlideshow(){
+  if(lbTimer){ stopSlideshow(); }
+  else { lbTimer = setInterval(lbNext, 3000); document.getElementById('lb-play').textContent = '⏸ Pause'; }
+}
+function stopSlideshow(){
+  if(lbTimer){ clearInterval(lbTimer); lbTimer = null; }
+  const p = document.getElementById('lb-play'); if(p) p.textContent = '▶ Slideshow';
+}
+document.addEventListener('keydown', e=>{
+  if(document.getElementById('lightbox').classList.contains('hidden')) return;
+  if(e.key === 'Escape') closeLb();
+  else if(e.key === 'ArrowRight') lbNext();
+  else if(e.key === 'ArrowLeft') lbPrev();
+});
 
 /* ═══════════════════ COMMENTS (localStorage) ═══════════════════ */
 function ckey(n){ return 'norway2026_comments_day'+n; }

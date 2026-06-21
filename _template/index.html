@@ -147,6 +147,23 @@
   </div>
 </footer>
 
+<!-- ░░ LIGHTBOX / SLIDESHOW ░░ -->
+<div id="lightbox" class="hidden fixed inset-0 z-[300] bg-fjord-900/95 flex flex-col">
+  <div class="flex items-center justify-between px-5 py-4 text-white">
+    <span id="lb-count" class="text-sm font-semibold text-fjord-200"></span>
+    <div class="flex items-center gap-2">
+      <button id="lb-play" onclick="toggleSlideshow()" class="text-sm font-semibold bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition">▶ Slideshow</button>
+      <button onclick="closeLb()" class="text-2xl leading-none hover:text-glacier px-2">✕</button>
+    </div>
+  </div>
+  <div class="flex-1 flex items-center justify-center px-1 sm:px-6 pb-2 min-h-0" onclick="if(event.target===this) closeLb()">
+    <button onclick="lbPrev()" class="text-white/70 hover:text-white text-4xl sm:text-5xl px-2 sm:px-5 select-none">‹</button>
+    <img id="lb-img" class="max-h-full max-w-full object-contain rounded-lg shadow-2xl" />
+    <button onclick="lbNext()" class="text-white/70 hover:text-white text-4xl sm:text-5xl px-2 sm:px-5 select-none">›</button>
+  </div>
+  <div class="text-center pb-6 px-6"><span id="lb-cap" class="text-white text-sm bg-white/10 rounded-full px-4 py-1.5"></span></div>
+</div>
+
 <script>
 /* ═══════════════════ DATA — EDIT THESE TWO ARRAYS ═══════════════════ */
 
@@ -326,11 +343,11 @@ function uploadPhotos(ev, n){
     const url = URL.createObjectURL(file);
     const fig = document.createElement('div');
     fig.className = "group relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm";
-    fig.innerHTML = `<img src="${url}" class="w-full h-full object-cover transition duration-300 group-hover:scale-110" />
-      <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition"></div>
-      <button onclick="deletePhoto(this,'${url}')" title="Delete photo"
+    fig.innerHTML = `<img src="${url}" alt="Your photo" onclick="openLightbox(${n}, this)" class="w-full h-full object-cover cursor-pointer transition duration-300 group-hover:scale-110" />
+      <div class="absolute inset-0 bg-fjord-900/0 group-hover:bg-fjord-900/30 transition pointer-events-none"></div>
+      <button onclick="event.stopPropagation();deletePhoto(this,'${url}')" title="Delete photo"
         class="absolute top-1.5 right-1.5 w-7 h-7 grid place-items-center rounded-full bg-white/90 text-fjord-700 hover:bg-red-500 hover:text-white shadow text-sm opacity-0 group-hover:opacity-100 transition">✕</button>
-      <span class="absolute bottom-1.5 left-1.5 bg-fjord-700/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">Your photo</span>`;
+      <span class="absolute bottom-1.5 left-1.5 bg-fjord-700/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full pointer-events-none">Your photo</span>`;
     g.prepend(fig);
   });
   ev.target.value = "";
@@ -339,6 +356,44 @@ function deletePhoto(btn, url){
   if(url) URL.revokeObjectURL(url);
   btn.closest('div').remove();
 }
+
+/* ═══════════════════ LIGHTBOX / SLIDESHOW ═══════════════════ */
+let lbImgs = [], lbIdx = 0, lbTimer = null;
+function openLightbox(n, imgEl){
+  const els = [...document.querySelectorAll('#gallery-'+n+' img')];
+  lbImgs = els.map(im => ({ src: im.src, cap: im.closest('figure')?.querySelector('figcaption')?.textContent || im.alt || '' }));
+  lbIdx = Math.max(0, els.indexOf(imgEl));
+  showLb();
+  document.getElementById('lightbox').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function showLb(){
+  const it = lbImgs[lbIdx]; if(!it) return;
+  document.getElementById('lb-img').src = it.src;
+  document.getElementById('lb-cap').textContent = it.cap;
+  document.getElementById('lb-count').textContent = `${lbIdx+1} / ${lbImgs.length}`;
+}
+function lbNext(){ if(lbImgs.length){ lbIdx = (lbIdx+1) % lbImgs.length; showLb(); } }
+function lbPrev(){ if(lbImgs.length){ lbIdx = (lbIdx-1+lbImgs.length) % lbImgs.length; showLb(); } }
+function closeLb(){
+  stopSlideshow();
+  document.getElementById('lightbox').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function toggleSlideshow(){
+  if(lbTimer){ stopSlideshow(); }
+  else { lbTimer = setInterval(lbNext, 3000); document.getElementById('lb-play').textContent = '⏸ Pause'; }
+}
+function stopSlideshow(){
+  if(lbTimer){ clearInterval(lbTimer); lbTimer = null; }
+  const p = document.getElementById('lb-play'); if(p) p.textContent = '▶ Slideshow';
+}
+document.addEventListener('keydown', e=>{
+  if(document.getElementById('lightbox').classList.contains('hidden')) return;
+  if(e.key === 'Escape') closeLb();
+  else if(e.key === 'ArrowRight') lbNext();
+  else if(e.key === 'ArrowLeft') lbPrev();
+});
 /* Comments scoped per-folder so trips don't share storage. */
 const TRIP_KEY = location.pathname.split('/').filter(Boolean).slice(-2,-1)[0] || 'trip';
 function ckey(n){ return TRIP_KEY+'_comments_day'+n; }
