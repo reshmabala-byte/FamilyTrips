@@ -32,6 +32,13 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Dashboard password hash (set once; reset by deleting the doc in console)
+    match /config/{id} {
+      allow read: if true;          // only a SHA-256 hash is stored, never the password
+      allow create: if true;        // first person sets it
+      allow update, delete: if false;
+    }
+
     // Everything else locked
     match /{document=**} { allow read, write: if false; }
   }

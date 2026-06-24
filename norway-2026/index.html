@@ -53,7 +53,7 @@
     <div class="mt-8 flex flex-wrap gap-3">
       <button onclick="toggleDash()" id="dashBtn"
         class="bg-white text-fjord-700 font-semibold px-5 py-3 rounded-full hover:bg-fjord-50 transition shadow-lg">
-        📊 Budget Dashboard
+        🔒 Budget Dashboard
       </button>
       <a href="#journey" class="border border-white/40 px-5 py-3 rounded-full hover:bg-white/10 transition font-semibold">
         🗺️ Explore the Days
@@ -75,6 +75,7 @@
       <h2 class="font-serif text-2xl sm:text-3xl font-600">Trip Expense &amp; Budget Log</h2>
       <div class="flex items-center gap-3">
         <button onclick="toggleExpForm()" class="bg-fjord-700 hover:bg-fjord-600 text-white text-sm font-semibold px-4 py-2 rounded-full transition">+ Add Expense</button>
+        <button onclick="lockDash()" title="Lock and require the password again" class="text-fjord-400 hover:text-fjord-700 text-sm font-semibold">🔒 Lock</button>
         <button onclick="toggleDash()" class="text-fjord-400 hover:text-fjord-700 text-sm font-semibold">✕ Close</button>
       </div>
     </div>
@@ -304,11 +305,55 @@ window.addEventListener('cloud-error', ()=>{
   const b = document.getElementById('cloud-badge'); if(b){ b.textContent = '⚠️ Sync offline (saved on this device)'; }
 });
 
-/* ═══════════════════ DASHBOARD ═══════════════════ */
-function toggleDash(){
+/* ═══════════════════ DASHBOARD (password-gated) ═══════════════════ */
+let dashUnlocked = sessionStorage.getItem('dash_unlocked') === '1';
+
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function getDashHash(){
+  if(cloudReady()){ try { return await window.cloudGetDashHash(); } catch(e){ return null; } }
+  return localStorage.getItem('dash_hash');
+}
+async function saveDashHash(h){
+  if(cloudReady()){ await window.cloudSetDashHash(h); }
+  else { localStorage.setItem('dash_hash', h); }
+}
+async function unlockDash(){
+  const stored = await getDashHash();
+  if(!stored){
+    const p1 = prompt('Set a password for the Budget Dashboard (shared with the family):');
+    if(!p1) return false;
+    const p2 = prompt('Re-enter the password to confirm:');
+    if(p1 !== p2){ alert('Passwords did not match. Try again.'); return false; }
+    try { await saveDashHash(await sha256(p1)); }
+    catch(e){ alert('Could not save password: '+e.message); return false; }
+    return true;
+  }
+  const entry = prompt('Enter the Budget Dashboard password:');
+  if(entry == null) return false;
+  if(await sha256(entry) === stored) return true;
+  alert('Incorrect password.');
+  return false;
+}
+async function toggleDash(){
   const d = document.getElementById('dash');
-  d.classList.toggle('hidden');
-  if(!d.classList.contains('hidden')) d.scrollIntoView({behavior:'smooth'});
+  if(!d.classList.contains('hidden')){ d.classList.add('hidden'); return; }   // close
+  if(!dashUnlocked){
+    const ok = await unlockDash();
+    if(!ok) return;
+    dashUnlocked = true;
+    sessionStorage.setItem('dash_unlocked','1');
+  }
+  d.classList.remove('hidden');
+  d.scrollIntoView({behavior:'smooth'});
+}
+function lockDash(){
+  dashUnlocked = false;
+  sessionStorage.removeItem('dash_unlocked');
+  document.getElementById('dash').classList.add('hidden');
+  document.querySelector('header')?.scrollIntoView({behavior:'smooth'});
 }
 /* custom expenses — cloud when available, else localStorage on this device */
 const EXP_KEY = (location.pathname.split('/').filter(Boolean).slice(-2,-1)[0] || 'trip') + '_expenses';
@@ -635,7 +680,7 @@ showDay(1);
 <!-- ═══════════════════ FIREBASE SYNC ═══════════════════ -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-  import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where, serverTimestamp }
+  import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, setDoc, onSnapshot, query, where, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
   import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject }
     from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
@@ -673,6 +718,8 @@ showDay(1);
       if(path){ try { await deleteObject(sRef(storage, path)); } catch(e){ /* file may be gone */ } }
       return deleteDoc(doc(db,'photos',id));
     };
+    window.cloudGetDashHash = async () => { const s = await getDoc(doc(db,'config','dashboard')); return s.exists() ? (s.data().passHash||null) : null; };
+    window.cloudSetDashHash = (h) => setDoc(doc(db,'config','dashboard'), {passHash:h, trip:TRIP});
 
     // ── live listeners ──
     onSnapshot(tripQ('expenses'), s => window.__onExpenses && window.__onExpenses(list(s)), e => onErr('expenses',e));
