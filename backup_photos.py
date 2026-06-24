@@ -18,7 +18,8 @@ from datetime import datetime
 
 PROJECT = "familytrips-25e63"
 API_KEY = "AIzaSyA4ojG1eRrvEhaPwyA0Vca-6AD2mfzTbqo"
-TRIPS   = ["norway-2026"]          # add future trip ids here
+# Backs up photos for ALL trips automatically — each new trip is picked up with
+# no code change, organized into its own folder by the doc's `trip` field.
 
 DEST_ROOT = os.path.join(os.path.expanduser("~"), "Documents", "FamilyTrips-PhotoBackups")
 REST = f"https://firestore.googleapis.com/v1/projects/{PROJECT}/databases/(default)/documents/photos"
@@ -58,10 +59,11 @@ def main():
 
     new_count = total = 0
     for d in docs:
-        if d["trip"] not in TRIPS or not d["url"]:
+        if not d["url"]:
             continue
         total += 1
-        folder = os.path.join(DEST_ROOT, d["trip"], f"day{d['day']}")
+        trip = d["trip"] or "misc"
+        folder = os.path.join(DEST_ROOT, trip, f"day{d['day']}")
         os.makedirs(folder, exist_ok=True)
         safe = "".join(c if c.isalnum() or c in "._-" else "_" for c in d["name"])
         out = os.path.join(folder, safe)
@@ -70,7 +72,7 @@ def main():
         try:
             urllib.request.urlretrieve(d["url"], out)
             new_count += 1
-            print(f"  + {d['trip']}/day{d['day']}/{safe}")
+            print(f"  + {trip}/day{d['day']}/{safe}")
         except Exception as e:
             print(f"  ! failed: {safe} ({e})")
 
